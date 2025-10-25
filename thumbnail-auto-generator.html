@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -194,6 +195,10 @@
                 ⚡ 12띠 썸네일 일괄 생성
             </button>
             
+            <button class="btn btn-success" id="downloadAllBtn" style="display: none;" onclick="downloadAll()">
+                💾 전체 다운로드 (12개)
+            </button>
+            
             <div class="progress-bar" id="progress">
                 <div class="progress-fill" id="progressBar">0%</div>
             </div>
@@ -374,9 +379,22 @@
                     if (completed === zodiacs.length) {
                         setTimeout(() => {
                             progress.style.display = 'none';
+                            document.getElementById('downloadAllBtn').style.display = 'block';
                         }, 1000);
                     }
                 }, index * 100);
+            });
+        }
+
+        function downloadAll() {
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            
+            generatedCanvases.forEach((item, index) => {
+                setTimeout(() => {
+                    const filename = `${month}${String(day).padStart(2, '0')}_${item.zodiac}.png`;
+                    downloadCanvas(item.canvas, filename);
+                }, index * 300); // 300ms 간격으로 다운로드
             });
         }
 
