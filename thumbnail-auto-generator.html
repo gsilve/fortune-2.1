@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 12띠 썸네일 자동 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .date-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="date"] {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            grid-column: 1 / -1;
+        }
+        
+        .quick-btn {
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .preview-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .preview-card canvas {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .download-btn {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .selected-date-display {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 12띠 썸네일 자동 생성기</h1>
+            <p>간결하고 깔끔하게! 날짜 + 띠 이름만!</p>
+        </div>
+
+        <div class="controls">
+            <h2 style="margin-bottom: 20px;">📅 날짜 선택</h2>
+            
+            <input type="date" id="dateInput" onchange="updateDateDisplay()">
+            
+            <div class="date-input">
+                <button class="quick-btn" onclick="setToday()">📅 오늘</button>
+                <button class="quick-btn" onclick="setTomorrow()">🌅 내일</button>
+                <button class="quick-btn" onclick="setDayAfterTomorrow()">📆 모레</button>
+            </div>
+            
+            <div class="selected-date-display" id="dateDisplay">
+                날짜를 선택하세요
+            </div>
+
+            <button class="btn btn-primary" onclick="generateAll()">
+                ⚡ 12띠 썸네일 일괄 생성
+            </button>
+            
+            <div class="progress-bar" id="progress">
+                <div class="progress-fill" id="progressBar">0%</div>
+            </div>
+        </div>
+
+        <div id="preview" class="preview-grid"></div>
+    </div>
+
+    <script>
+        const zodiacConfig = {
+            "쥐띠": {
+                emoji: "🐭",
+                color: "#7B68EE"
+            },
+            "소띠": {
+                emoji: "🐮",
+                color: "#8B7355"
+            },
+            "호랑이띠": {
+                emoji: "🐯",
+                color: "#FF8C00"
+            },
+            "토끼띠": {
+                emoji: "🐰",
+                color: "#FFB6C1"
+            },
+            "용띠": {
+                emoji: "🐲",
+                color: "#6A5ACD"
+            },
+            "뱀띠": {
+                emoji: "🐍",
+                color: "#2ECC71"
+            },
+            "말띠": {
+                emoji: "🐴",
+                color: "#E74C3C"
+            },
+            "양띠": {
+                emoji: "🐑",
+                color: "#F5DEB3"
+            },
+            "원숭이띠": {
+                emoji: "🐵",
+                color: "#FFD700"
+            },
+            "닭띠": {
+                emoji: "🐓",
+                color: "#FF6347"
+            },
+            "개띠": {
+                emoji: "🐕",
+                color: "#4682B4"
+            },
+            "돼지띠": {
+                emoji: "🐷",
+                color: "#FFB6D9"
+            }
+        };
+
+        let generatedCanvases = [];
+        let selectedDate = new Date();
+
+        // 초기화
+        document.getElementById('dateInput').valueAsDate = selectedDate;
+        updateDateDisplay();
+
+        function setToday() {
+            selectedDate = new Date();
+            document.getElementById('dateInput').valueAsDate = selectedDate;
+            updateDateDisplay();
+        }
+
+        function setTomorrow() {
+            selectedDate = new Date();
+            selectedDate.setDate(selectedDate.getDate() + 1);
+            document.getElementById('dateInput').valueAsDate = selectedDate;
+            updateDateDisplay();
+        }
+
+        function setDayAfterTomorrow() {
+            selectedDate = new Date();
+            selectedDate.setDate(selectedDate.getDate() + 2);
+            document.getElementById('dateInput').valueAsDate = selectedDate;
+            updateDateDisplay();
+        }
+
+        function updateDateDisplay() {
+            const dateInput = document.getElementById('dateInput');
+            selectedDate = new Date(dateInput.value);
+            
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            
+            document.getElementById('dateDisplay').textContent = 
+                `${month}월 ${day}일 썸네일을 생성합니다`;
+        }
+
+        function createThumbnail(zodiac, dateStr) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1080;
+            canvas.height = 1920;
+            const ctx = canvas.getContext('2d');
+            
+            const config = zodiacConfig[zodiac];
+            
+            // 단색 배경
+            ctx.fillStyle = config.color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 이모지 (더 위로)
+            ctx.font = '350px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(config.emoji, 540, 450);
+            
+            // 날짜 (검은색, 볼드, 위로)
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 90px "Noto Sans KR", Arial, sans-serif';
+            ctx.fillText(dateStr, 540, 750);
+            
+            // 띠 이름 (검은색, 볼드, 위로 - 날짜 바로 아래)
+            ctx.font = 'bold 130px "Noto Sans KR", Arial, sans-serif';
+            ctx.fillText(zodiac, 540, 890);
+            
+            return canvas;
+        }
+
+        function generateAll() {
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            const dateStr = `${month}월 ${day}일`;
+            
+            const preview = document.getElementById('preview');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            
+            preview.innerHTML = '';
+            generatedCanvases = [];
+            progress.style.display = 'block';
+            
+            const zodiacs = Object.keys(zodiacConfig);
+            let completed = 0;
+            
+            zodiacs.forEach((zodiac, index) => {
+                setTimeout(() => {
+                    const canvas = createThumbnail(zodiac, dateStr);
+                    generatedCanvases.push({ zodiac, canvas, dateStr });
+                    
+                    // 미리보기 카드 생성
+                    const card = document.createElement('div');
+                    card.className = 'preview-card';
+                    
+                    const previewCanvas = document.createElement('canvas');
+                    previewCanvas.width = 250;
+                    previewCanvas.height = 444;
+                    const previewCtx = previewCanvas.getContext('2d');
+                    previewCtx.drawImage(canvas, 0, 0, 250, 444);
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.textContent = `📥 ${zodiac} 다운로드`;
+                    downloadBtn.onclick = () => {
+                        const filename = `${month}${String(day).padStart(2, '0')}_${zodiac}.png`;
+                        downloadCanvas(canvas, filename);
+                    };
+                    
+                    card.appendChild(previewCanvas);
+                    card.appendChild(downloadBtn);
+                    preview.appendChild(card);
+                    
+                    // 진행률 업데이트
+                    completed++;
+                    const percent = Math.round((completed / zodiacs.length) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
+                    
+                    if (completed === zodiacs.length) {
+                        setTimeout(() => {
+                            progress.style.display = 'none';
+                        }, 1000);
+                    }
+                }, index * 100);
+            });
+        }
+
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+    </script>
+</body>
+</html>
